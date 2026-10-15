@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ArrowUpRight, ChevronDown } from 'lucide-react'
 
 const content = {
-  aircraft: { title: 'Military Aircrafts', intro: 'Fixed-wing aircraft documented through role, engineering lineage, operators and service history.', entries: ['F-35 Lightning II','F-22 Raptor','F-16 Fighting Falcon','F-14 Tomcat'] },
+  aircraft: { title: 'Military Aircrafts', intro: 'Fixed-wing aircraft documented through role, engineering lineage, operators and service history.', entries: ['F-35 Lightning II','F-22 Raptor','F/A-18 Hornet','F-16 Fighting Falcon','F-14 Tomcat','F-15EX Eagle II','MiG-29 Fulcrum','Su-35 Flanker-E','Su-57 Felon','Eurofighter Typhoon','Dassault Rafale','A-10 Thunderbolt II','SR-71 Blackbird','B-2 Spirit','B-21 Raider','B-52 Stratofortress','Tu-160 Blackjack','C-17 Globemaster III','C-5M Super Galaxy','AC-130 Gunship','J-36','F/A-XX','F-47 NGAD','Su-47 Berkut'] },
   helicopters: { title: 'Military Helicopters', intro: 'Rotorcraft reference entries covering lift, mobility, attack, rescue and battlefield support.', entries: ['AH-64 Apache','UH-60 Black Hawk','CH-47 Chinook','Mi-24 Hind'] },
   tanks: { title: 'Military Tanks', intro: 'Armoured vehicle records exploring protection, firepower, mobility and battlefield doctrine.', entries: ['M1 Abrams','Leopard 2','T-90','Challenger 2'] },
   ships: { title: 'Military Ships', intro: 'Naval platform records covering carrier groups, destroyers, frigates and strategic vessels.', entries: ['Nimitz-class Carrier','Arleigh Burke-class Destroyer','Type 45 Destroyer','Kirov-class Battlecruiser'] },
