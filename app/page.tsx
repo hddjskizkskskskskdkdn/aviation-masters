@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react'
 import { ArrowUpRight, ChevronDown, LockKeyhole, Search } from 'lucide-react'
 
+const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
 const aircraft = [
   ['F-35 Lightning II','Stealth / Multirole','USA',1.6,1200,50],['F-22 Raptor','Air Superiority','USA',2.25,1600,48],['F/A-18 Hornet','Carrier Multirole','USA',1.8,1275,43],['F-16 Fighting Falcon','Multirole Fighter','USA',2.05,1350,42],['F-14 Tomcat','Fleet Defense','USA',2.34,1600,48],['F-15EX Eagle II','Air Superiority','USA',2.5,1200,68],['MiG-29 Fulcrum','Air Superiority','Russia',2.25,1500,43],['Su-35 Flanker-E','Air Superiority','Russia',2.25,1800,48],['Su-57 Felon','Stealth / Multirole','Russia',2,1750,47],['Eurofighter Typhoon','Swing-Role','Europe',2,1800,45],['Dassault Rafale','Omnirole Fighter','France',1.8,1900,44],['A-10 Thunderbolt II','Close Air Support','USA',0.78,800,40],['SR-71 Blackbird','Reconnaissance','USA',3.32,2900,85],['B-2 Spirit','Stealth Bomber','USA',0.95,6000,52],['B-21 Raider','Stealth Bomber','USA',0.9,5000,50],['B-52 Stratofortress','Strategic Bomber','USA',0.86,8800,185],['Tu-160 Blackjack','Strategic Bomber','Russia',2.05,7300,120],['C-17 Globemaster III','Airlift','USA',0.82,2400,73],['C-5M Super Galaxy','Airlift','USA',0.79,4400,95],['AC-130 Gunship','Close Air Support','USA',0.59,2400,38],['J-36','Next-Gen / Concept','China',2.5,3000,60],['F/A-XX','Carrier Next-Gen','USA',2,2200,48],['F-47 NGAD','Next-Gen Air Dominance','USA',2,2500,55],['Su-47 Berkut','Technology Demonstrator','Russia',1.6,1500,44],
 ] as const
@@ -13,7 +15,7 @@ function Detail({ item }: { item: Aircraft }) {
     <div className="panel-kicker"><span>DOCUMENTARY ENTRY</span><b>PUBLIC REFERENCE</b></div>
     <h2>{item[0]}</h2><p className="detail-type">{item[1]} <span>/</span> {item[2]}</p>
     <div className="spec-grid"><div><span>MAX SPEED</span><strong>Mach {item[3]}</strong></div><div><span>RANGE</span><strong>{item[4].toLocaleString()} km</strong></div><div><span>LENGTH</span><strong>{item[5]} m est.</strong></div><div><span>STATUS</span><strong>Reference</strong></div></div>
-    <div className="detail-copy"><p>Aviation Masters presents a concise public-data reference for this aircraft. Explore the role, performance context, design lineage and service history through the archive below.</p><a href="#data-table" className="text-link">Read full data sheet <ArrowUpRight size={15}/></a></div>
+    <div className="detail-copy"><p>Aviation Masters presents a concise public-data reference for this aircraft. Explore the role, performance context, design lineage and service history through the archive below.</p><a href={`/aircraft/${slugify(item[0])}`} className="text-link">Read full data sheet <ArrowUpRight size={15}/></a></div>
   </article>
 }
 
