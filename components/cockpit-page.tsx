@@ -19,7 +19,24 @@ export default function CockpitPage({ slug }: { slug: string }) {
   const [mode, setMode] = useState(profile.mode)
   const [scan, setScan] = useState(42)
   const [message, setMessage] = useState('SYSTEMS READY · SELECT A MISSION PROFILE')
+  const [weather, setWeather] = useState<{ temperature: number; wind: number; visibility: string } | null>(null)
+  const [weatherLoading, setWeatherLoading] = useState(false)
   const telemetry = useMemo(() => ({ speed: Math.round(profile.speed + scan * 1.2), altitude: profile.altitude + scan * 12 }), [profile, scan])
+
+  const loadWeather = async () => {
+    setWeatherLoading(true)
+    try {
+      const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=6.9271&longitude=79.8612&current=temperature_2m,wind_speed_10m,visibility&wind_speed_unit=kn')
+      if (!response.ok) throw new Error('weather unavailable')
+      const data = await response.json()
+      setWeather({ temperature: Math.round(data.current.temperature_2m), wind: Math.round(data.current.wind_speed_10m), visibility: `${Math.round(data.current.visibility / 1000)} KM` })
+      setMessage('COLOMBO WEATHER FEED LOADED · MISSION BRIEFING UPDATED')
+    } catch {
+      setMessage('WEATHER FEED UNAVAILABLE · USE SIMULATION CONDITIONS')
+    } finally {
+      setWeatherLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!running) return
@@ -38,7 +55,7 @@ export default function CockpitPage({ slug }: { slug: string }) {
     <section className="cockpit-grid">
       <aside className="cockpit-sidebar"><div className="cockpit-label">MISSION PROFILE</div><button className={mode === 'FREE FLIGHT' ? 'selected' : ''} onClick={() => setMode('FREE FLIGHT')}>FREE FLIGHT</button><button className={mode === 'INTERCEPT' ? 'selected' : ''} onClick={() => setMode('INTERCEPT')}>INTERCEPT</button><button className={mode === 'RECON' ? 'selected' : ''} onClick={() => setMode('RECON')}>RECON</button><button className={mode === 'CARRIER CAP' ? 'selected' : ''} onClick={() => setMode('CARRIER CAP')}>CARRIER APPROACH</button><button className="launch-cockpit" onClick={launch}><Crosshair size={15}/> {running ? 'MISSION LIVE' : 'INITIALIZE'}</button></aside>
       <div className="hud-screen"><div className="hud-scanline"/><div className="hud-corners"/><div className="hud-status"><span>FLIGHT COMPUTER 01</span><span>{running ? 'LIVE' : 'STANDBY'}</span></div><div className="radar-display"><div className="radar-ring ring-one"/><div className="radar-ring ring-two"/><div className="radar-line" style={{ transform: `rotate(${scan * 3.6}deg)` }}/><div className="radar-blip blip-one"/><div className="radar-blip blip-two"/><Radio size={22}/></div><div className="hud-readout"><span>SPD <b>{telemetry.speed} KT</b></span><span>ALT <b>{telemetry.altitude.toLocaleString()} FT</b></span><span>HDG <b>{String(240 + Math.round(scan)).padStart(3, '0')}°</b></span></div><div className="hud-message">{message}</div></div>
-      <aside className="telemetry-panel"><div className="telemetry-card"><Gauge size={18}/><span>AIRSPEED</span><strong>{telemetry.speed}</strong><small>KNOTS / INDICATED</small></div><div className="telemetry-card"><ShieldAlert size={18}/><span>THREAT STATUS</span><strong>01</strong><small>{profile.threat}</small></div><div className="telemetry-card"><Radio size={18}/><span>DATA LINK</span><strong>98%</strong><small>FUSED SENSOR PICTURE</small></div></aside>
+      <aside className="telemetry-panel"><div className="telemetry-card"><Gauge size={18}/><span>AIRSPEED</span><strong>{telemetry.speed}</strong><small>KNOTS / INDICATED</small></div><div className="telemetry-card"><ShieldAlert size={18}/><span>THREAT STATUS</span><strong>01</strong><small>{profile.threat}</small></div><div className="telemetry-card"><Radio size={18}/><span>DATA LINK</span><strong>98%</strong><small>FUSED SENSOR PICTURE</small></div><div className="telemetry-card weather-card"><span>LIVE WEATHER · COLOMBO</span>{weather ? <><strong>{weather.temperature}°C</strong><small>WIND {weather.wind} KT · VIS {weather.visibility}</small></> : <small>FREE OPEN-METEO FEED</small>}<button type="button" onClick={loadWeather} disabled={weatherLoading}>{weatherLoading ? 'LOADING...' : weather ? 'REFRESH FEED' : 'LOAD WEATHER'}</button></div></aside>
     </section>
     <section className="cockpit-log"><span>MISSION EVENT LOG</span><p><b>01:24:08</b> {running ? 'Radar sweep complete. Contact classification updated.' : 'Awaiting pilot input. Select a profile to begin.'}</p><p><b>01:24:12</b> Public capability model loaded for {profile.name}.</p></section>
   </main>
