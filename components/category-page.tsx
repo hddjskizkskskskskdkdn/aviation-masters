@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowUpRight, ChevronDown, Plane } from 'lucide-react'
+import { ArrowUpRight, Bomb, ChevronDown, CircleDot, Crosshair, Navigation, Plane, Radar, Rocket, Shield } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 const content = {
   aircraft: { title: 'Military Aircrafts', intro: 'Fixed-wing aircraft documented through role, engineering lineage, operators and service history.', entries: ['F-35 Lightning II','F-22 Raptor','F/A-18 Hornet','F-16 Fighting Falcon','F-14 Tomcat','F-15EX Eagle II','MiG-29 Fulcrum','Su-35 Flanker-E','Su-57 Felon','Eurofighter Typhoon','Dassault Rafale','A-10 Thunderbolt II','SR-71 Blackbird','B-2 Spirit','B-21 Raider','B-52 Stratofortress','Tu-160 Blackjack','C-17 Globemaster III','C-5M Super Galaxy','AC-130 Gunship','J-36','F/A-XX','F-47 NGAD','Su-47 Berkut'] },
@@ -11,8 +12,42 @@ const content = {
   drones: { title: 'Military Drones', intro: 'Uncrewed systems documented through missions, sensors, endurance and operational context.', entries: ['MQ-9 Reaper','RQ-4 Global Hawk','Bayraktar TB2','Switchblade'] },
 } as const
 
+const aircraftIcons: Record<string, LucideIcon> = {
+  'F-35 Lightning II': Crosshair,
+  'F-22 Raptor': Radar,
+  'F/A-18 Hornet': Navigation,
+  'F-16 Fighting Falcon': Rocket,
+  'F-14 Tomcat': Plane,
+  'F-15EX Eagle II': Shield,
+  'MiG-29 Fulcrum': CircleDot,
+  'Su-35 Flanker-E': Crosshair,
+  'Su-57 Felon': Radar,
+  'Eurofighter Typhoon': Rocket,
+  'Dassault Rafale': Navigation,
+  'A-10 Thunderbolt II': Bomb,
+  'SR-71 Blackbird': Rocket,
+  'B-2 Spirit': Shield,
+  'B-21 Raider': Radar,
+  'B-52 Stratofortress': Bomb,
+  'Tu-160 Blackjack': Rocket,
+  'C-17 Globemaster III': Plane,
+  'C-5M Super Galaxy': Plane,
+  'AC-130 Gunship': Bomb,
+  'J-36': Radar,
+  'F/A-XX': Crosshair,
+  'F-47 NGAD': Shield,
+  'Su-47 Berkut': Navigation,
+}
+
+const categoryIcons: Record<string, LucideIcon> = {
+  helicopters: Radar,
+  tanks: Shield,
+  ships: Navigation,
+  drones: CircleDot,
+}
+
 export default function CategoryPage({ type, userName }: { type: keyof typeof content; userName: string }) {
   const [open, setOpen] = useState<string | null>(null)
   const data = content[type]
-  return <main className="category-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark">AM</span><span>AVIATION <b>MASTERS</b></span></a><nav className="primary-nav"><a href="/category/aircraft">Aircraft</a><a href="/category/helicopters">Helicopters</a><a href="/category/tanks">Tanks</a><a href="/category/ships">Ships</a><a href="/category/drones">Drones</a></nav><div className="profile-menu"><button type="button" className="profile-trigger"><span className="profile-avatar">{userName.slice(0,1).toUpperCase()}</span>{userName}<ChevronDown size={13}/></button><div className="profile-dropdown"><a href="/profile">View profile</a><a href="/">Customer archive</a></div></div></header><section className="category-hero"><span className="eyebrow">AVIATION MASTERS / CUSTOMER ARCHIVE</span><h1>{data.title}</h1><p>{data.intro}</p></section><section className="category-list">{data.entries.map((entry,index)=><div className="category-entry" key={entry}><button onClick={()=>setOpen(open===entry?null:entry)} aria-expanded={open===entry}><span className="entry-index">{String(index+1).padStart(2,'0')}</span><span className="aircraft-icon" aria-hidden="true"><Plane size={19}/></span><b>{entry}</b><small>DOCUMENTARY REFERENCE</small><ChevronDown className={open===entry?'open':''} size={16}/></button>{open===entry&&<article><span>DOCUMENTARY ENTRY</span><h2>{entry}</h2><p>Aviation Masters is preparing a detailed public-reference sheet for this {type} entry, including what it is, why it was made, who developed it, when it entered service, operators, active status, design lineage and documented historical use.</p><a href="#" className="text-link">Open full data sheet <ArrowUpRight size={15}/></a></article>}</div>)}</section><footer>AVIATION MASTERS / {data.title.toUpperCase()} / PUBLIC REFERENCE</footer></main>
+  return <main className="category-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark">AM</span><span>AVIATION <b>MASTERS</b></span></a><nav className="primary-nav"><a href="/category/aircraft">Aircraft</a><a href="/category/helicopters">Helicopters</a><a href="/category/tanks">Tanks</a><a href="/category/ships">Ships</a><a href="/category/drones">Drones</a></nav><div className="profile-menu"><button type="button" className="profile-trigger"><span className="profile-avatar">{userName.slice(0,1).toUpperCase()}</span>{userName}<ChevronDown size={13}/></button><div className="profile-dropdown"><a href="/profile">View profile</a><a href="/">Customer archive</a></div></div></header><section className="category-hero"><span className="eyebrow">AVIATION MASTERS / CUSTOMER ARCHIVE</span><h1>{data.title}</h1><p>{data.intro}</p></section><section className="category-list">{data.entries.map((entry,index)=><div className="category-entry" key={entry}><button onClick={()=>setOpen(open===entry?null:entry)} aria-expanded={open===entry}><span className="entry-index">{String(index+1).padStart(2,'0')}</span>{(() => { const EntryIcon = aircraftIcons[entry] ?? categoryIcons[type] ?? Plane; return <span className="aircraft-icon" aria-hidden="true"><EntryIcon size={19}/></span> })()}<b>{entry}</b><small>DOCUMENTARY REFERENCE</small><ChevronDown className={open===entry?'open':''} size={16}/></button>{open===entry&&<article><span>DOCUMENTARY ENTRY</span><h2>{entry}</h2><p>Aviation Masters is preparing a detailed public-reference sheet for this {type} entry, including what it is, why it was made, who developed it, when it entered service, operators, active status, design lineage and documented historical use.</p><a href="#" className="text-link">Open full data sheet <ArrowUpRight size={15}/></a></article>}</div>)}</section><footer>AVIATION MASTERS / {data.title.toUpperCase()} / PUBLIC REFERENCE</footer></main>
 }
