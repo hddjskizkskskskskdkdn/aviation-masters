@@ -1,38 +1,86 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Copy, LogOut, Swords } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Volume2, VolumeX, Swords } from 'lucide-react'
 
-const aircraft = ['F-35 Lightning II','F-22 Raptor','F-16 Fighting Falcon','F-14 Tomcat','Su-57 Felon','Su-35 Flanker-E','MiG-29 Fulcrum','Eurofighter Typhoon']
-type Room = { code:string; host_user_id:string; guest_user_id:string|null; host_aircraft:string; guest_aircraft:string|null; host_count:number; guest_count:number|null; host_ready:boolean; guest_ready:boolean; status:string; winner:string|null; host_score:number|null; guest_score:number|null }
-const steps = ['Create a room or enter a friend’s code','Choose your aircraft and fleet size','Both players press Ready','Watch the mission story and debrief']
-const storyPhases = ['MISSION BRIEFING · Weather clear. Both teams receive the same intelligence picture.','RADAR CONTACT · Opposing formations detected beyond visual range.','POSITIONING · Pilots trade altitude and angle while support systems come online.','ENGAGEMENT · The first exchange begins. Electronic countermeasures are active.','DAMAGE ASSESSMENT · Sensors compare surviving aircraft and tactical position.','DEBRIEF · The server is preparing the final educational outcome.']
+const aircraft = [
+  { name: 'F-35 Lightning II', role: 'Stealth multirole fighter', score: 92 },
+  { name: 'F-22 Raptor', role: 'Air-superiority fighter', score: 96 },
+  { name: 'F-16 Fighting Falcon', role: 'Multirole fighter', score: 78 },
+  { name: 'F-14 Tomcat', role: 'Fleet-defense interceptor', score: 72 },
+  { name: 'Su-57 Felon', role: 'Stealth multirole fighter', score: 89 },
+  { name: 'Su-35 Flanker-E', role: 'Air-superiority fighter', score: 82 },
+  { name: 'MiG-29 Fulcrum', role: 'Air-defense fighter', score: 69 },
+  { name: 'Eurofighter Typhoon', role: 'Air-superiority fighter', score: 90 },
+]
 
-export default function BattlePage({ userName }: { userName:string }) {
-  const [room,setRoom]=useState<Room|null>(null); const [currentUserId,setCurrentUserId]=useState(''); const [code,setCode]=useState(''); const [joinCode,setJoinCode]=useState(''); const [inviteHandled,setInviteHandled]=useState(false); const [inviteLink,setInviteLink]=useState(''); const [aircraftName,setAircraftName]=useState('F-35 Lightning II'); const [count,setCount]=useState(2); const [message,setMessage]=useState('Create a room or join a friend with a room code.'); const [battleProgress,setBattleProgress]=useState(0); const [autoResolving,setAutoResolving]=useState(false); const [storyIndex,setStoryIndex]=useState(0)
-  const post=async(action:string, payload:Record<string,unknown>={})=>{const res=await fetch('/api/battle',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,...payload})});const data=await res.json();if(!res.ok) throw new Error(data.error||'Battle request failed');setRoom(data.room);setCurrentUserId(data.currentUserId||'');setCode(data.room.code);return data.room}
-  const load=async(value:string)=>{const res=await fetch(`/api/battle?code=${encodeURIComponent(value)}`);if(res.ok){const data=await res.json();setRoom(data.room);setCurrentUserId(data.currentUserId||currentUserId);setCode(data.room.code)}}
-  useEffect(()=>{if(!code)return;load(code);const timer=setInterval(()=>load(code),1000);return()=>clearInterval(timer)},[code])
-  useEffect(()=>{const invited=new URLSearchParams(window.location.search).get('room');if(!invited||inviteHandled||room)return;setInviteHandled(true);setJoinCode(invited.toUpperCase());post('join',{code:invited,aircraft:aircraftName,count}).then(joined=>setMessage(`You joined ${joined.code} as Team B. Choose your aircraft, then get ready.`)).catch(error=>setMessage(error instanceof Error?error.message:'This invite is no longer available'))},[inviteHandled,room,aircraftName,count])
-  const isHost=Boolean(room&&currentUserId&&room.host_user_id===currentUserId)
-  const readyForBattle=Boolean(room?.host_ready&&room?.guest_ready)
-  const myReady=room ? (isHost ? room.host_ready : room.guest_ready) : false
-  const sideLabel=room ? (isHost ? 'TEAM A' : 'TEAM B') : ''
-  const create=async()=>{try{const created=await post('create',{aircraft:aircraftName,count});const link=`${window.location.origin}/battle?room=${created.code}`;setInviteLink(link);setMessage('Room created. Copy the invite link and send it to your opponent.')}catch(error){setMessage(error instanceof Error?error.message:'Unable to create room')}}
-  const join=async()=>{try{const joined=await post('join',{code:joinCode,aircraft:aircraftName,count});setMessage(`Joined room ${joined.code}. Choose your side and get ready.`)}catch(error){setMessage(error instanceof Error?error.message:'Unable to join room')}}
-  const update=async(nextAircraft=aircraftName,nextCount=count)=>{setAircraftName(nextAircraft);setCount(nextCount);if(room)try{await post('update',{code:room.code,aircraft:nextAircraft,count:nextCount})}catch(error){setMessage(error instanceof Error?error.message:'Unable to update team')}}
-  const ready=async()=>{try{await post('ready',{code:room?.code});setMessage('You are ready. Waiting for the other player.')}catch(error){setMessage(error instanceof Error?error.message:'Unable to ready up')}}
-  const battle=async()=>{try{await post('battle',{code:room?.code});setMessage('Battle resolved by the server.')}catch(error){setMessage(error instanceof Error?error.message:'Both players must be ready')}}
-  useEffect(()=>{if(room?.status==='complete')setAutoResolving(false);if(!readyForBattle||room?.status==='complete'||autoResolving||!room?.code)return;setAutoResolving(true);setBattleProgress(0);setStoryIndex(0);setMessage(storyPhases[0]);let progress=0;const timer=setInterval(()=>{progress+=5;setBattleProgress(progress);setStoryIndex(Math.min(storyPhases.length-1,Math.floor(progress/(100/storyPhases.length))));if(progress>=100){clearInterval(timer);battle()}},180);return()=>clearInterval(timer)},[readyForBattle,room?.status,room?.code,autoResolving])
-  const opponent=useMemo(()=>room?.guest_user_id?'Opponent connected':'Waiting for opponent…',[room])
+const phases = [
+  ['MISSION BRIEFING', 'A contested air corridor. Both pilots receive the same intelligence picture.'],
+  ['RADAR CONTACT', 'Long-range sensors acquire the opposing formation beyond visual range.'],
+  ['POSITIONING', 'Both jets trade altitude and angle. Low observability and sensor fusion shape the first move.'],
+  ['ENGAGEMENT', 'The merge begins. Countermeasures flare as the fighters enter the threat envelope.'],
+  ['DOGFIGHT', 'Visual range combat. Energy, agility and pilot positioning decide the turning fight.'],
+  ['DEBRIEF', 'The mission result is calculated from the selected aircraft, fleet size and scenario conditions.'],
+]
+
+function playTone(enabled: boolean, frequency = 440, duration = 0.08) {
+  if (!enabled || typeof window === 'undefined') return
+  const context = new AudioContext()
+  const oscillator = context.createOscillator()
+  const gain = context.createGain()
+  oscillator.frequency.value = frequency
+  oscillator.type = 'sawtooth'
+  gain.gain.setValueAtTime(0.04, context.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration)
+  oscillator.connect(gain).connect(context.destination)
+  oscillator.start()
+  oscillator.stop(context.currentTime + duration)
+}
+
+export default function BattlePage({ userName }: { userName: string }) {
+  const [teamA, setTeamA] = useState('F-35 Lightning II')
+  const [teamB, setTeamB] = useState('Su-57 Felon')
+  const [countA, setCountA] = useState(2)
+  const [countB, setCountB] = useState(2)
+  const [phase, setPhase] = useState(-1)
+  const [progress, setProgress] = useState(0)
+  const [result, setResult] = useState<string | null>(null)
+  const [sound, setSound] = useState(true)
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const fighterA = useMemo(() => aircraft.find(item => item.name === teamA)!, [teamA])
+  const fighterB = useMemo(() => aircraft.find(item => item.name === teamB)!, [teamB])
+  const running = phase >= 0 && !result
+
+  useEffect(() => () => { if (timer.current) clearInterval(timer.current) }, [])
+
+  const startBattle = () => {
+    if (timer.current) clearInterval(timer.current)
+    setResult(null); setPhase(0); setProgress(0); playTone(sound, 180, .16)
+    let tick = 0
+    timer.current = setInterval(() => {
+      tick += 2
+      setProgress(tick)
+      const nextPhase = Math.min(phases.length - 1, Math.floor(tick / (100 / phases.length)))
+      setPhase(nextPhase)
+      playTone(sound, 260 + nextPhase * 70, .04)
+      if (tick >= 100) {
+        if (timer.current) clearInterval(timer.current)
+        const scoreA = fighterA.score * countA + Math.round(Math.random() * 10)
+        const scoreB = fighterB.score * countB + Math.round(Math.random() * 10)
+        setResult(scoreA === scoreB ? 'DRAW — BOTH TEAMS DISENGAGED' : scoreA > scoreB ? `TEAM A WINS — ${teamA}` : `TEAM B WINS — ${teamB}`)
+        playTone(sound, scoreA === scoreB ? 330 : scoreA > scoreB ? 660 : 220, .35)
+      }
+    }, 120)
+  }
+
   return <main className="battle-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark">AM</span><span>AVIATION <b>MASTERS</b></span></a><nav className="primary-nav"><a href="/category/aircraft">Military Aircrafts</a><a href="/category/helicopters">Military Helicopters</a><a href="/category/tanks">Military Tanks</a><a href="/category/ships">Military Ships</a><a href="/category/drones">Military Drones</a><a className="active-nav" href="/battle">Battle</a></nav><a className="profile-trigger" href="/profile">{userName}</a></header>
-  <section className="battle-hero"><span className="eyebrow">ONLINE ROOM / TWO PLAYER</span><h1>Battle <i>room.</i></h1><p>Play with one other Aviation Masters customer. No game account or external app is needed—just create a room and share its six-character code.</p><div className="battle-steps">{steps.map((step,index)=><div key={step}><b>0{index+1}</b><span>{step}</span></div>)}</div></section>
-  <section className="room-actions"><div><span className="eyebrow">PLAYER 1 / TEAM A</span><h2>Create a room</h2><p>Choose this if you are hosting. We will generate a code for your opponent.</p><button className="battle-primary" onClick={create}><Swords size={15}/> CREATE ROOM & GET CODE</button></div><div className="join-box"><span className="eyebrow">PLAYER 2 / TEAM B</span><h2>Join a room</h2><p>Ask Player 1 for their six-character room code, enter it below, then join.</p><input aria-label="Six character room code" value={joinCode} onChange={event=>setJoinCode(event.target.value.toUpperCase())} placeholder="ENTER CODE e.g. AB12CD" maxLength={6}/><button className="battle-secondary" disabled={joinCode.length!==6} onClick={join}>JOIN ROOM</button></div></section>
-  {inviteLink&&<section className="invite-panel"><span className="eyebrow">INVITE YOUR OPPONENT</span><strong>Send this link to Player 2</strong><div><input readOnly value={inviteLink}/><button className="battle-secondary" onClick={()=>navigator.clipboard?.writeText(inviteLink)}><Copy size={14}/> COPY INVITE LINK</button></div></section>}
-  {room&&<section className="battle-board multiplayer-board"><TeamCard label={sideLabel} selected={aircraftName} count={count} disabled={myReady} onAircraft={(value)=>update(value,count)} onCount={(value)=>update(aircraftName,value)}/><div className="versus"><span className="room-code-label">ROOM CODE</span><strong className="room-code">{room.code}</strong><button className="battle-secondary" onClick={()=>navigator.clipboard?.writeText(room.code)}><Copy size={14}/> COPY CODE</button><span>{opponent}</span></div><article className="team-card opponent-card"><div className="team-card-head"><span>{isHost?'TEAM B':'TEAM A'}</span><span>{isHost?room.guest_ready:room.host_ready?'READY':'WAITING'}</span></div><strong>{isHost?room.guest_aircraft||'Waiting for selection':room.host_aircraft}</strong><div className="team-role">{isHost?room.guest_count||'—':room.host_count} AIRCRAFT</div></article></section>}
-  {room&&<section className="room-controls"><p>{message}</p><div className="ready-status"><span>{myReady?'YOU ARE READY':'YOUR TURN'}</span><small>{myReady?(isHost?(room.guest_ready?'Opponent ready — starting mission…':'Waiting for Team B…'):(room.host_ready?'Opponent ready — starting mission…':'Waiting for Team A…')):'Select your aircraft and confirm when ready.'}</small></div><button className="battle-secondary" disabled={myReady||!room.guest_user_id} onClick={ready}>{myReady?'READY':'READY UP'}</button>{autoResolving&&room.status!=='complete'&&<div className="battle-progress-wrap" role="status" aria-live="polite"><div className="battle-progress"><div className="progress-ring" style={{'--progress':`${battleProgress*3.6}deg`} as React.CSSProperties}><span>{battleProgress}%</span></div><div><strong>{storyPhases[storyIndex].split(' · ')[0]}</strong><small>{storyPhases[storyIndex].split(' · ')[1]}</small></div></div><div className="mission-feed">{storyPhases.slice(0,storyIndex+1).map((phase,index)=><p key={phase} className={index===storyIndex?'current':''}><b>0{index+1}</b>{phase}</p>)}</div></div>}</section>}
-  {room?.status==='complete'&&<section className="battle-result" aria-live="polite"><span className="eyebrow">SERVER RESULT / {room.code}</span><h2>{room.winner}</h2><p>Team A {room.host_score} points versus Team B {room.guest_score} points. Both players received the same server-calculated outcome.</p><p className="debrief-note">Educational fictional scenario: the result uses public capability context, fleet size and room selections—not a prediction of real combat.</p></section>}
-  {!room&&<section className="battle-result"><span className="eyebrow">HOW IT WORKS</span><p>Room codes connect two authenticated customers. Team selections and ready states sync every few seconds; no external game API is required.</p></section>}
+    <section className="battle-hero"><span className="eyebrow">SOLO COMBAT SIMULATOR</span><h1>Jet <i>combat.</i></h1><p>Set up a fictional one-player air engagement. Watch the mission unfold from radar contact to the final debrief.</p><div className="solo-note"><strong>HOW IT WORKS</strong><span>Select two jets, choose fleet sizes, then launch the cinematic simulation. No room code or opponent required.</span></div></section>
+    <section className="battle-board solo-board"><JetCard label="TEAM A / BLUE FORCE" selected={teamA} count={countA} disabled={running} onJet={setTeamA} onCount={setCountA}/><div className="versus"><span>VS</span><button className="sound-toggle" onClick={() => setSound(value => !value)}>{sound ? <Volume2 size={15}/> : <VolumeX size={15}/>} {sound ? 'AUDIO ON' : 'AUDIO OFF'}</button></div><JetCard label="TEAM B / RED FORCE" selected={teamB} count={countB} disabled={running} onJet={setTeamB} onCount={setCountB}/></section>
+    <section className="room-controls solo-controls"><p>{running ? `${phases[phase][0]} · ${phases[phase][1]}` : result ? 'Simulation complete. Review the tactical debrief below.' : 'Ready when you are, pilot.'}</p><button className="battle-primary" disabled={running} onClick={startBattle}><Swords size={15}/> {result ? 'RUN AGAIN' : 'LAUNCH SIMULATION'}</button></section>
+    {running && <section className="simulation-panel" aria-live="polite"><div className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div><div><span className="eyebrow">LIVE MISSION FEED</span><h2>{phases[phase][0]}</h2><p>{phases[phase][1]}</p></div><div className="mission-feed">{phases.slice(0, phase + 1).map(([title, text], index) => <p className={index === phase ? 'current' : ''} key={title}><b>0{index + 1}</b>{title}<small>{text}</small></p>)}</div></section>}
+    {result && <section className="battle-result" aria-live="polite"><span className="eyebrow">FINAL DEBRIEF</span><h2>{result}</h2><p>{teamA} fielded {countA} unit{countA > 1 ? 's' : ''}; {teamB} fielded {countB} unit{countB > 1 ? 's' : ''}. The outcome uses a fictional educational model based on public capability context and fleet size—not a real combat prediction.</p></section>}
   </main>
 }
-function TeamCard({label,selected,count,disabled,onAircraft,onCount}:{label:string;selected:string;count:number;disabled:boolean;onAircraft:(value:string)=>void;onCount:(value:number)=>void}){return <article className="team-card"><div className="team-card-head"><span>{label}</span><span>{disabled?'READY':'SELECT'}</span></div><label>PLATFORM<select value={selected} disabled={disabled} onChange={event=>onAircraft(event.target.value)}>{aircraft.map(name=><option key={name}>{name}</option>)}</select></label><label>FLEET COUNT<input type="number" min="1" max="12" value={count} disabled={disabled} onChange={event=>onCount(Math.max(1,Math.min(12,Number(event.target.value)||1)))}/></label><div className="team-role">{count} AIRCRAFT / {selected}</div></article>}
+
+function JetCard({ label, selected, count, disabled, onJet, onCount }: { label: string; selected: string; count: number; disabled: boolean; onJet: (value: string) => void; onCount: (value: number) => void }) { return <article className="team-card"><div className="team-card-head"><span>{label}</span><span>{disabled ? 'IN FLIGHT' : 'SELECT'}</span></div><label>JET PLATFORM<select value={selected} disabled={disabled} onChange={event => onJet(event.target.value)}>{aircraft.map(item => <option key={item.name}>{item.name}</option>)}</select></label><label>FLEET SIZE<input type="number" min="1" max="6" value={count} disabled={disabled} onChange={event => onCount(Math.max(1, Math.min(6, Number(event.target.value) || 1)))}/></label><div className="team-role">{count} × {aircraft.find(item => item.name === selected)?.role}</div></article> }
+EOF
