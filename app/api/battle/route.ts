@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   }
   if (action === 'ready') {
     const readyField = side === 'host' ? 'host_ready' : 'guest_ready'
-    const updated = await pool.query(`UPDATE battle_rooms SET ${readyField}=true, status=CASE WHEN host_ready OR guest_ready THEN 'ready' ELSE status END, updated_at=now() WHERE code=$1 RETURNING *`, [roomCode])
+    const updated = await pool.query(`UPDATE battle_rooms SET ${readyField}=true, status='ready', updated_at=now() WHERE code=$1 RETURNING *`, [roomCode])
     return NextResponse.json({ room: updated.rows[0], currentUserId: user.id })
   }
   if (action === 'battle') {
