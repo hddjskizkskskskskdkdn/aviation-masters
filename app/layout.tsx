@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import AmbientAudio from '@/components/ambient-audio'
 
 export const metadata: Metadata = {
   title: 'Aviation Masters — The Aircraft Archive',
@@ -42,6 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         {children}
+        <AmbientAudio />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
