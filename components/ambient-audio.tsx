@@ -5,42 +5,22 @@ import { Volume2, VolumeX } from 'lucide-react'
 
 export default function AmbientAudio() {
   const [enabled, setEnabled] = useState(false)
-  const contextRef = useRef<AudioContext | null>(null)
-  const nodesRef = useRef<{ master: GainNode; oscillators: OscillatorNode[] } | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const start = async () => {
-    if (typeof window === 'undefined') return
-    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioContextClass) return
-    const context = contextRef.current ?? new AudioContextClass()
-    contextRef.current = context
-    await context.resume()
-    if (!nodesRef.current) {
-      const master = context.createGain()
-      master.gain.value = 0.018
-      master.connect(context.destination)
-      const oscillators = [55, 82.5, 110].map((frequency, index) => {
-        const oscillator = context.createOscillator()
-        const gain = context.createGain()
-        oscillator.type = index === 0 ? 'sine' : 'triangle'
-        oscillator.frequency.value = frequency
-        gain.gain.value = index === 0 ? 0.6 : 0.18
-        oscillator.connect(gain)
-        gain.connect(master)
-        oscillator.start()
-        return oscillator
-      })
-      nodesRef.current = { master, oscillators }
+    const audio = audioRef.current
+    if (!audio) return
+    audio.volume = 0.22
+    try {
+      await audio.play()
+      setEnabled(true)
+    } catch {
+      setEnabled(false)
     }
-    nodesRef.current.master.gain.setTargetAtTime(0.018, context.currentTime, 0.35)
-    setEnabled(true)
   }
 
   const stop = () => {
-    const context = contextRef.current
-    if (context && nodesRef.current) {
-      nodesRef.current.master.gain.setTargetAtTime(0, context.currentTime, 0.25)
-    }
+    audioRef.current?.pause()
     setEnabled(false)
   }
 
@@ -55,10 +35,16 @@ export default function AmbientAudio() {
     return () => {
       window.removeEventListener('pointerdown', beginAfterGesture)
       window.removeEventListener('keydown', beginAfterGesture)
-      nodesRef.current?.oscillators.forEach((oscillator) => oscillator.stop())
-      void contextRef.current?.close()
+      audioRef.current?.pause()
     }
   }, [])
 
-  return <button className="ambient-audio" type="button" aria-label={enabled ? 'Mute ambient archive sound' : 'Enable ambient archive sound'} onClick={() => enabled ? stop() : void start()}>{enabled ? <Volume2 size={15}/> : <VolumeX size={15}/>} <span>{enabled ? 'AMBIENT ON' : 'SOUND'}</span></button>
+  return (
+    <>
+      <audio ref={audioRef} src="/audio/dawning-anthem-falls.mp3" loop preload="metadata" aria-label="Dawning by Anthem Falls" />
+      <button className="ambient-audio" type="button" aria-label={enabled ? 'Mute Dawning background music' : 'Play Dawning background music'} onClick={() => enabled ? stop() : void start()}>
+        {enabled ? <Volume2 size={15}/> : <VolumeX size={15}/>} <span>{enabled ? 'DAWNING ON' : 'MUSIC'}</span>
+      </button>
+    </>
+  )
 }
