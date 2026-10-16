@@ -51,7 +51,8 @@ export default function BattlePage({ userName }: { userName: string }) {
   const fighterA = useMemo(() => aircraft.find(item => item.name === teamA)!, [teamA])
   const fighterB = useMemo(() => aircraft.find(item => item.name === teamB)!, [teamB])
   const running = phase >= 0 && !result
-  const captainTeam = `${userName}'s ${userName.endsWith('s') ? 'Vanguard' : 'Strike Wing'}`
+  const captainName = userName?.trim() || 'Captain'
+  const captainTeam = `${captainName}'s ${captainName.endsWith('s') ? 'Vanguard' : 'Strike Wing'}`
   const enemyTeam = `Enemy ${teamB.split(' ')[0]} Flight`
   const winnerLabel = result?.startsWith('CAPTAIN') ? captainTeam : result?.startsWith('ENEMY') ? enemyTeam : 'Both formations'
 
@@ -74,7 +75,7 @@ export default function BattlePage({ userName }: { userName: string }) {
         const won = scoreA > scoreB
         const draw = scoreA === scoreB
         setEarnedXp(draw ? 20 : won ? 100 : 35)
-        setResult(draw ? 'DRAW — BOTH FORMATIONS DISENGAGED' : won ? `CAPTAIN ${userName.toUpperCase()} WINS — ${captainTeam.toUpperCase()}` : `ENEMY WINS — ${enemyTeam.toUpperCase()}`)
+        setResult(draw ? 'DRAW — BOTH FORMATIONS DISENGAGED' : won ? `CAPTAIN ${captainName.toUpperCase()} WINS — ${captainTeam.toUpperCase()}` : `ENEMY WINS — ${enemyTeam.toUpperCase()}`)
         playTone(sound, scoreA === scoreB ? 330 : scoreA > scoreB ? 660 : 220, .35)
       }
     }, 120)
