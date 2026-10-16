@@ -45,11 +45,15 @@ export default function BattlePage({ userName }: { userName: string }) {
   const [phase, setPhase] = useState(-1)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<string | null>(null)
+  const [earnedXp, setEarnedXp] = useState<number | null>(null)
   const [sound, setSound] = useState(true)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   const fighterA = useMemo(() => aircraft.find(item => item.name === teamA)!, [teamA])
   const fighterB = useMemo(() => aircraft.find(item => item.name === teamB)!, [teamB])
   const running = phase >= 0 && !result
+  const captainTeam = `${userName}'s ${userName.endsWith('s') ? 'Vanguard' : 'Strike Wing'}`
+  const enemyTeam = `Enemy ${teamB.split(' ')[0]} Flight`
+  const winnerLabel = result?.startsWith('CAPTAIN') ? captainTeam : result?.startsWith('ENEMY') ? enemyTeam : 'Both formations'
 
   useEffect(() => () => { if (timer.current) clearInterval(timer.current) }, [])
 
@@ -67,7 +71,10 @@ export default function BattlePage({ userName }: { userName: string }) {
         if (timer.current) clearInterval(timer.current)
         const scoreA = fighterA.score * countA + Math.round(Math.random() * 10)
         const scoreB = fighterB.score * countB + Math.round(Math.random() * 10)
-        setResult(scoreA === scoreB ? 'DRAW — BOTH TEAMS DISENGAGED' : scoreA > scoreB ? `TEAM A WINS — ${teamA}` : `TEAM B WINS — ${teamB}`)
+        const won = scoreA > scoreB
+        const draw = scoreA === scoreB
+        setEarnedXp(draw ? 20 : won ? 100 : 35)
+        setResult(draw ? 'DRAW — BOTH FORMATIONS DISENGAGED' : won ? `CAPTAIN ${userName.toUpperCase()} WINS — ${captainTeam.toUpperCase()}` : `ENEMY WINS — ${enemyTeam.toUpperCase()}`)
         playTone(sound, scoreA === scoreB ? 330 : scoreA > scoreB ? 660 : 220, .35)
       }
     }, 120)
@@ -75,10 +82,10 @@ export default function BattlePage({ userName }: { userName: string }) {
 
   return <main className="battle-shell"><header className="topbar"><a className="brand" href="/"><span className="brand-mark">AM</span><span>AVIATION <b>MASTERS</b></span></a><nav className="primary-nav"><a href="/category/aircraft">Military Aircrafts</a><a href="/category/helicopters">Military Helicopters</a><a href="/category/tanks">Military Tanks</a><a href="/category/ships">Military Ships</a><a href="/category/drones">Military Drones</a><a className="active-nav" href="/battle">Battle</a></nav><a className="profile-trigger" href="/profile">{userName}</a></header>
     <section className="battle-hero"><span className="eyebrow">SOLO COMBAT SIMULATOR</span><h1>Jet <i>combat.</i></h1><p>Set up a fictional one-player air engagement. Watch the mission unfold from radar contact to the final debrief.</p><div className="solo-note"><strong>HOW IT WORKS</strong><span>Select two jets, choose fleet sizes, then launch the cinematic simulation. No room code or opponent required.</span></div></section>
-    <section className="battle-board solo-board"><JetCard label="TEAM A / BLUE FORCE" selected={teamA} count={countA} disabled={running} onJet={setTeamA} onCount={setCountA}/><div className="versus"><span>VS</span><button className="sound-toggle" onClick={() => setSound(value => !value)}>{sound ? <Volume2 size={15}/> : <VolumeX size={15}/>} {sound ? 'AUDIO ON' : 'AUDIO OFF'}</button></div><JetCard label="TEAM B / RED FORCE" selected={teamB} count={countB} disabled={running} onJet={setTeamB} onCount={setCountB}/></section>
+    <section className="battle-board solo-board"><JetCard label={`${captainTeam.toUpperCase()} / CAPTAIN`} selected={teamA} count={countA} disabled={running} onJet={setTeamA} onCount={setCountA}/><div className="versus"><span>VS</span><button className="sound-toggle" onClick={() => setSound(value => !value)}>{sound ? <Volume2 size={15}/> : <VolumeX size={15}/>} {sound ? 'AUDIO ON' : 'AUDIO OFF'}</button></div><JetCard label={`${enemyTeam.toUpperCase()} / HOSTILE`} selected={teamB} count={countB} disabled={running} onJet={setTeamB} onCount={setCountB}/></section>
     <section className="room-controls solo-controls"><p>{running ? `${phases[phase][0]} · ${phases[phase][1]}` : result ? 'Simulation complete. Review the tactical debrief below.' : 'Ready when you are, pilot.'}</p><button className="battle-primary" disabled={running} onClick={startBattle}><Swords size={15}/> {result ? 'RUN AGAIN' : 'LAUNCH SIMULATION'}</button></section>
     {running && <section className="simulation-panel" aria-live="polite"><div className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div><div><span className="eyebrow">LIVE MISSION FEED</span><h2>{phases[phase][0]}</h2><p>{phases[phase][1]}</p></div><div className="mission-feed">{phases.slice(0, phase + 1).map(([title, text], index) => <p className={index === phase ? 'current' : ''} key={title}><b>0{index + 1}</b>{title}<small>{text}</small></p>)}</div></section>}
-    {result && <section className="battle-result" aria-live="polite"><span className="eyebrow">FINAL DEBRIEF</span><h2>{result}</h2><p>{teamA} fielded {countA} unit{countA > 1 ? 's' : ''}; {teamB} fielded {countB} unit{countB > 1 ? 's' : ''}. The outcome uses a fictional educational model based on public capability context and fleet size—not a real combat prediction.</p></section>}
+    {result && <section className="battle-result" aria-live="polite"><span className="eyebrow">FINAL DEBRIEF</span><h2>{result}</h2><p>{captainTeam} fielded {countA} {teamA} unit{countA > 1 ? 's' : ''}; {enemyTeam} fielded {countB} {teamB} unit{countB > 1 ? 's' : ''}. The outcome uses a fictional educational model based on public capability context and fleet size—not a real combat prediction.</p><div className="xp-award"><strong>+{earnedXp} XP</strong><span>{winnerLabel} mission credit awarded to {userName}.</span></div></section>}
   </main>
 }
 
