@@ -10,6 +10,15 @@ export const pilotProfiles = pgTable('pilot_profiles', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({ userIndex: uniqueIndex('pilot_profiles_user_id_idx').on(table.userId) }))
 
+export const flightSessions = pgTable('flight_sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  aircraft: text('aircraft').notNull().default('F-35A Lightning II'),
+  mission: text('mission').notNull(),
+  durationSeconds: integer('duration_seconds').notNull(),
+  completedAt: timestamp('completed_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export const schoolEvents = pgTable('school_events', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
