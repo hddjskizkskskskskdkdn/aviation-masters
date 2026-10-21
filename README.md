@@ -167,6 +167,21 @@ Shared cross-page UI belongs in `components/` (for example, `components/site-nav
 - Prefer semantic HTML, accessible labels, keyboard navigation, and responsive layouts.
 - Do not use localStorage as the source of truth for account progress or purchases.
 
+## Commercial handoff checklist
+
+This repository is prepared for a sanitized private ZIP or private repository transfer. Before delivery:
+
+1. Confirm `git ls-files` contains no `.env*`, `.vercel/`, credentials, private certificates, or generated deployment artifacts.
+2. Keep the development GitHub repository private unless a marketplace explicitly requires a public URL.
+3. Provide `.env.example`, this README, and setup instructions—not real environment values.
+4. Ask the buyer to create their own Neon/Postgres, Better Auth, Stripe, and Vercel resources.
+5. Rotate any credential that was ever exposed outside the project or shared with a buyer.
+6. Transfer IP only through a separate signed IP assignment agreement after payment; this README is not an ownership transfer.
+7. Audit fonts, images, generated artwork, dependencies, trademarks, and contributor rights before claiming full ownership.
+8. Remove internal branches, private deployment links, support credentials, and personal data from the delivery archive.
+
+Do not include `STRIPE_SECRET_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `STRIPE_WEBHOOK_SECRET`, or any other secret in a ZIP or public repository.
+
 ## Deployment checklist
 
 - Confirm production environment variables are configured.
