@@ -146,6 +146,18 @@ AM tokens are fictional in-app credits and have no cash value. For a production 
 - Add spending limits, clear pricing, purchase history, and support contact details.
 - Review consumer-protection, tax, age, and regional requirements before launch.
 
+## Project organization
+
+Shared cross-page UI belongs in `components/` (for example, `components/site-nav.tsx`). Route-specific composition stays under `app/`, while domain logic and data contracts belong in `lib/`. New features should follow this boundary instead of duplicating navigation, authentication checks, pricing, or database access inside page components.
+
+### Data ownership map
+
+- **Identity and sessions:** `lib/auth.ts`, `lib/auth-client.ts`, Better Auth
+- **Persistent user data:** `lib/db/schema.ts` and server actions under `app/actions/`
+- **Catalog and mission configuration:** domain modules under `lib/`; migrate editable content to database-backed tables as the catalog grows
+- **Payments and fulfillment:** `lib/products.ts`, `app/api/checkout`, `app/api/stripe/webhook`
+- **Presentation:** `components/` and route pages under `app/`
+
 ## Architecture conventions
 
 - Server Components should load initial server data; interactive components use `use client`.
